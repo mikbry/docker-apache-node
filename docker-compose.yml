@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  web:
+    build: ./opla-ps/infra/nginx
+    restart: always
+    depends_on:
+      - "backend"
+      - "webservices"
+    ports:
+      - "80:80"
+      - "443:443"
+    networks: 
+      - private
+      - public
+    volumes:
+      - ./public:/etc/nginx/www
+      - ./certs:/etc/nginx/certs
+    environment:
+      - APP_FRONT_DOMAIN
+      - APP_API_DOMAIN
+      - APP_NAME
+      - APP_BACKEND_PORT
+      - APP_UPLOAD_MAXSIZE
+    user: ${CURRENT_UID}
+  
+  backend:
+    build:
+      context: ./backend
+
+    volumes:
+      - ./public/${APP_UPLOAD_PATH}:/app/${APP_UPLOAD_PATH}
+      - ./${APP_CERTIFICATES_PATH}:/app/${APP_CERTIFICATES_PATH}
+    environment:
+      - NODE_ENV
+      - APP_NAME
+      - APP_BACKEND_PORT
+      - APP_DATABASE_PROVIDER
+      - APP_DATABASE_NAME
+      - APP_DATABASE_PORT
+      - APP_DATABASE_URL
+      - APP_DATABASE_SECURE
+      - APP_DATABASE_SECURE_VALIDATE
+      - APP_DATABASE_SECURE_PASS
+      - APP_CERTIFICATES_PATH
+      - APP_UPLOAD_PATH
+      - APP_UPLOAD_MAXSIZE
+      - APP_USE_COOKIES
+    ports:
+      - ${APP_BACKEND_PORT}:${APP_BACKEND_PORT}
+    networks: 
+      - private
+    user: ${CURRENT_UID}
+
+  webservices:
+    build:
+      context: ./webservices
+    restart: always
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - APP_NAME
+      - APP_WEBSERVICES_PORT
+    ports:
+      - ${APP_WEBSERVICES_PORT}:${APP_WEBSERVICES_PORT}
+    networks: 
+      - private
+    user: ${CURRENT_UID}
+
+networks:
+  public: 
+  private: 
